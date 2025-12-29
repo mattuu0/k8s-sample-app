@@ -7,15 +7,12 @@ on:
     paths:
       - 'app/**'
       - 'frontend/**'
-  workflow_dispatch:
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+      - '.github/workflows/**'
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
@@ -34,29 +31,23 @@ jobs:
             frontend:
               - 'frontend/**'
 
-      - name: Log in to the Container registry
+      - name: Login to GitHub Container Registry
         if: steps.changes.outputs.app == 'true' || steps.changes.outputs.frontend == 'true'
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        if: steps.changes.outputs.app == 'true' || steps.changes.outputs.frontend == 'true'
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         if: steps.changes.outputs.app == 'true' || steps.changes.outputs.frontend == 'true'
         uses: docker/setup-buildx-action@v3
 
       # App Build & Push
-      - name: Extract metadata (tags, labels) for App
-        if: steps.changes.outputs.app == 'true'
-        id: meta-app
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/app
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-
-
       - name: Build and push App
         if: steps.changes.outputs.app == 'true'
         uses: docker/build-push-action@v6
@@ -65,20 +56,11 @@ jobs:
           file: ./app/dockerfile
           target: release
           push: true
-          tags: ${{ steps.meta-app.outputs.tags }}
-          labels: ${{ steps.meta-app.outputs.labels }}
+          tags: |
+            ghcr.io/${{ github.repository }}/app:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/app:latest
 
       # Frontend Build & Push
-      - name: Extract metadata (tags, labels) for Frontend
-        if: steps.changes.outputs.frontend == 'true'
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-
-
       - name: Build and push Frontend
         if: steps.changes.outputs.frontend == 'true'
         uses: docker/build-push-action@v6
@@ -87,5 +69,6 @@ jobs:
           file: ./frontend/Dockerfile
           target: release
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/frontend:latest
