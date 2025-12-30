@@ -57,8 +57,8 @@ jobs:
           target: release
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/app:${{ github.sha }}-hostname
-            ghcr.io/${{ github.repository }}/app:latest-hostname
+            ghcr.io/${{ github.repository }}/app-hostname:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/app-hostname:latest
 
       # Frontend Build & Push
       - name: Build and push Frontend
@@ -70,5 +70,5 @@ jobs:
           target: release
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}-hostname
-            ghcr.io/${{ github.repository }}/frontend:latest-hostname
+            ghcr.io/${{ github.repository }}/frontend-hostname:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/frontend-hostname:latest
